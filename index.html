@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>線上塔羅占卜 Tarot Reader</title>
+    <title>線上塔羅占卜 (生活化解讀版)</title>
     <style>
         :root {
             --bg-color: #1a0b2e;
@@ -241,14 +241,14 @@
 <body>
 
     <header>
-        <h1>🔮 線上塔羅占卜</h1>
-        <div class="subtitle">請在心中專注冥想你的問題，然後開始抽牌</div>
+        <h1>🔮 生活化塔羅指引</h1>
+        <div class="subtitle">用最日常的語言，為你解開心中的疑惑</div>
     </header>
 
     <div class="controls">
         <div class="input-group">
             <label>你想問的問題</label>
-            <input type="text" id="questionInput" placeholder="例如：我最近的工作運勢如何？">
+            <input type="text" id="questionInput" placeholder="例如：最近那個曖昧對象對我有意思嗎？">
         </div>
 
         <div class="input-group">
@@ -288,126 +288,324 @@
     <script>
         /**
          * 1. Tarot Deck Data Construction
-         * Expanded to include logic for all 78 cards.
          */
         
         // Helper to create card objects
-        const createCard = (id, name, suit, number, upKeys, revKeys, upSum, revSum) => ({
-            id, name, suit, number, uprightKeywords: upKeys, reversedKeywords: revKeys, uprightSummary: upSum, reversedSummary: revSum, arcana: suit ? 'minor' : 'major'
+        // Tag 用於生成建議：'new'(新開始/冒險), 'action'(行動/熱情), 'wait'(觀察/休息/停滯), 'stable'(穩定/守成), 'conflict'(衝突/挑戰), 'social'(人際/合作), 'caution'(小心/風險)
+        const createCard = (id, name, suit, number, tag, upSum, revSum) => ({
+            id, name, suit, number, tag, uprightSummary: upSum, reversedSummary: revSum, arcana: suit ? 'minor' : 'major'
         });
 
-        // Major Arcana Data
+        // Major Arcana Data (生活化版 + Tags)
         const MAJORS = [
-            createCard("maj_0", "愚人", null, 0, ["新的開始", "冒險", "天真", "自由"], ["魯莽", "不負責任", "過度冒險", "混亂"], "一段新旅程的起點，象徵無限的可能性與純真的勇氣，但需注意腳踏實地。", "可能因為過於天真或衝動而做出錯誤決定，或是因為恐懼而裹足不前，建議三思而後行。"),
-            createCard("maj_1", "魔術師", null, 1, ["創造力", "技能", "意志力", "顯化"], ["欺騙", "操弄", "才華浪費", "溝通不良"], "你擁有實現目標所需的一切資源與能力，現在是採取行動、展現才華的最佳時刻。", "可能面臨資源不足、計畫受阻，或是被表象迷惑，需提防投機取巧的心態。"),
-            createCard("maj_2", "女祭司", null, 2, ["直覺", "神秘", "潛意識", "內在智慧"], ["情緒化", "封閉", "忽視直覺", "膚淺"], "靜心傾聽內在的聲音，答案往往藏在你的直覺與潛意識之中，保持冷靜與敏銳。", "情緒可能較為不穩，或是忽略了內心的警訊，導致判斷失準，建議多花時間與自己對話。"),
-            createCard("maj_3", "女皇", null, 3, ["豐盛", "母性", "創造", "感官享受"], ["依賴", "奢侈", "創造力受阻", "過度保護"], "象徵富足與收穫的時期，適合孕育新計畫或享受生活中的美好事物，充滿慈愛的能量。", "可能因為過度追求物質享受而忽略心靈，或是在關係中過於依賴、情緒勒索。"),
-            createCard("maj_4", "皇帝", null, 4, ["權威", "結構", "領導力", "穩定"], ["暴政", "僵化", "缺乏紀律", "濫用權力"], "透過自律與邏輯規劃建立秩序，展現領導力與責任感，能為混亂帶來穩定。", "可能過於固執己見、缺乏彈性，或是反過來缺乏執行力，導致局面失控。"),
-            createCard("maj_5", "教皇", null, 5, ["傳統", "信仰", "學習", "精神指引"], ["叛逆", "盲從", "打破傳統", "虛偽"], "遵循既有的傳統與智慧，尋求心靈導師的指引，或是透過正規途徑學習將有所獲益。", "可能對現有體制感到窒息，想要挑戰權威，或者過度拘泥於形式而忽略了真實的意義。"),
-            createCard("maj_6", "戀人", null, 6, ["愛", "和諧", "選擇", "價值觀"], ["不和", "失衡", "錯誤選擇", "分離"], "面臨重要的人生抉擇，通常與關係或價值觀有關，強調傾聽心聲與建立深刻連結。", "可能在關係中出現裂痕、溝通不良，或是因為猶豫不決而錯失良機。"),
-            createCard("maj_7", "戰車", null, 7, ["勝利", "意志力", "自控", "決心"], ["失控", "失敗", "暴力", "阻礙"], "透過強大的意志力克服困難，掌握局勢的控制權，衝勁十足並邁向成功。", "前進的動力受阻，可能因為情緒失控或方向錯誤而導致混亂，需要重新調整步伐。"),
-            createCard("maj_8", "力量", null, 8, ["勇氣", "耐心", "內在力量", "包容"], ["恐懼", "懷疑", "軟弱", "急躁"], "真正的力量來自於內心的溫柔與堅定，以柔克剛，用耐心去化解眼前的挑戰。", "內心感到恐懼或不安，可能因為失去信心而退縮，或是試圖用蠻力解決問題。"),
-            createCard("maj_9", "隱者", null, 9, ["反省", "孤獨", "尋求真理", "引導"], ["孤立", "退縮", "迷失", "過度分析"], "這是一段需要獨處與內省的時期，暫時遠離喧囂，尋找內在的光與答案。", "可能因為害怕社交而自我封閉，或是陷入鑽牛角尖的狀態，忽略了外界的幫助。"),
-            createCard("maj_10", "命運之輪", null, 10, ["改變", "週期", "機遇", "宿命"], ["厄運", "抵抗改變", "延遲", "重複"], "生命中的轉折點，順應命運的流動，把握突如其來的機會，改變是必然的。", "可能面臨低潮期，感覺運勢不佳，或是抗拒改變導致停滯不前。"),
-            createCard("maj_11", "正義", null, 11, ["公平", "真相", "法律", "因果"], ["不公", "偏見", "逃避責任", "失衡"], "強調公平與誠實，種什麼因得什麼果，需要客觀理智地評估現況並做出決定。", "可能遭受不公平的對待，或是自己試圖逃避責任、判斷有失偏頗。"),
-            createCard("maj_12", "倒吊人", null, 12, ["犧牲", "換位思考", "等待", "放下"], ["無謂犧牲", "掙扎", "自私", "拖延"], "暫時的停滯是為了更好的前進，換個角度看世界，願意犧牲小我來換取智慧。", "可能陷入無謂的掙扎，不願改變觀點，或是感覺被困住而心生怨懟。"),
-            createCard("maj_13", "死神", null, 13, ["結束", "轉變", "重生", "釋放"], ["抗拒改變", "停滯", "恐懼", "無法放手"], "一個階段的徹底結束，雖然痛苦但也是重生的必要過程，學會放手才能迎接新生。", "緊抓著過去不放，導致無法前進，內心充滿對改變的恐懼。"),
-            createCard("maj_14", "節制", null, 14, ["平衡", "調和", "耐心", "中庸"], ["失衡", "極端", "缺乏耐心", "衝突"], "尋求不同力量之間的平衡點，透過溝通與調和來化解對立，保持心靈的平靜。", "生活失去平衡，可能過度沈溺於某事，或是缺乏耐心導致人際關係緊張。"),
-            createCard("maj_15", "高塔", null, 15, ["劇變", "災難", "覺醒", "崩塌"], ["避免災難", "恐懼改變", "延遲爆發", "內在動盪"], "建立在虛假基礎上的事物崩塌，突如其來的劇變雖然震撼，卻能帶來徹底的覺醒。", "雖然暫時避開了危機，但根本問題仍未解決，內心處於高度壓抑狀態。"),
-            createCard("maj_16", "星星", null, 16, ["希望", "靈感", "療癒", "平靜"], ["絕望", "失落", "缺乏信心", "幻滅"], "黑暗後的曙光，充滿希望與靈感，相信宇宙的指引，內在創傷將得到療癒。", "感到灰心喪志，對未來缺乏信心，或是設立了不切實際的期望而感到失落。"),
-            createCard("maj_17", "月亮", null, 17, ["幻覺", "不安", "潛意識", "模糊"], ["清晰", "釋放恐懼", "揭露真相", "混亂平息"], "前路未明，內心充滿不安與恐懼，可能被表象迷惑，需留意潛意識的夢境與訊息。", "迷霧逐漸散去，隱藏的真相浮出水面，內心的恐懼開始消退。"),
-            createCard("maj_18", "太陽", null, 18, ["快樂", "成功", "活力", "清晰"], ["暫時低潮", "過度樂觀", "不切實際", "陰影"], "充滿正能量與活力，事情將順利發展，享受當下的快樂與成就。", "雖然整體正向，但可能因為過度樂觀而忽略細節，或是內心仍有一絲陰霾。"),
-            createCard("maj_19", "審判", null, 19, ["重生", "召喚", "覺醒", "決斷"], ["自我懷疑", "拒絕改變", "悔恨", "拖延"], "過去的努力將在此刻得到評判，是時候做出重要決定，響應內心的召喚。", "對過去感到後悔，無法原諒自己，或是忽視了改變的契機而停滯。"),
-            createCard("maj_20", "世界", null, 20, ["完成", "圓滿", "旅行", "成就"], ["未完成", "缺乏", "延遲", "空虛"], "一個旅程的圓滿結束，達成了目標，感受到與世界的合一與滿足。", "離成功只差一步，可能感到缺乏最後的拼圖，或是感到莫名的空虛。")
+            createCard("maj_0", "愚人", null, 0, "new",
+                "就像沒做攻略就背上背包去旅行，雖然不知道下一站在哪，但心情雀躍，對世界充滿好奇。這暗示著一個大膽的新開始，別想太多，衝就對了。", 
+                "就像出門旅行卻忘了帶錢包，雖然有勇氣但缺乏準備。這提醒你可能有點太過天真或衝動，小心因為沒看清現實而摔跤。"),
+            
+            createCard("maj_1", "魔術師", null, 1, "action", 
+                "就像大廚打開冰箱，發現剛好具備所有需要的食材，可以隨手變出一道好菜。現在是你展現實力的時候，你的能力與資源都準備好了。", 
+                "就像想變魔術卻露了餡，或是手上雖然有工具卻不知道怎麼用。這暗示你可能還欠缺一點火候，或是太過依賴小聰明，結果反而弄巧成拙。"),
+            
+            createCard("maj_2", "女祭司", null, 2, "wait", 
+                "就像在安靜的深夜裡讀一本書，外表平靜但內心運作豐富。這時候不要急著對外嚷嚷，靜下來聽聽你心裡的聲音（直覺），它比大腦分析得更準。", 
+                "就像因為想太多而睡不著覺，把別人的無心之過解讀成針對你。這暗示你最近可能有點神經質，或是把自己封閉起來，拒絕與人溝通。"),
+            
+            createCard("maj_3", "女皇", null, 3, "social", 
+                "就像週末躺在舒適的沙發上吃著高級甜點，感到無比富足與慵懶。這是收穫與享受的時刻，無論是懷孕、種花還是存錢，都會有豐盛的成果。", 
+                "就像為了填補空虛而瘋狂網購，或是對伴侶過度依賴、情緒勒索。這提醒你不要讓物質慾望或不安全感控制了你的生活。"),
+            
+            createCard("maj_4", "皇帝", null, 4, "stable", 
+                "就像一位嚴格但可靠的公司主管，制定了明確的規則讓大家遵守。現在需要的是邏輯、紀律和行動力，收起情緒，用理智來解決問題。", 
+                "就像一個只會發號施令但沒人聽的老闆，或是你自己太過固執，聽不進別人的建議。這暗示局勢可能有點失控，或者你太過強勢讓人反感。"),
+            
+            createCard("maj_5", "教皇", null, 5, "stable", 
+                "就像去學校上課或是去廟裡拜拜求籤，透過正規的管道或長輩的建議來解決問題。這時候不適合標新立異，跟著有經驗的人走最安全。", 
+                "就像受夠了學校的死板規定想要翹課，或是發現所謂的權威人士其實在說謊。這暗示你想要挑戰傳統，或是現有的體制讓你感到窒息。"),
+            
+            createCard("maj_6", "戀人", null, 6, "social", 
+                "就像熱戀中的情侶眼裡只有對方，或者遇到了一個跟你一拍即合的合作夥伴。這張牌強調的是「選擇」，請選擇那個讓你心動且價值觀相符的方向。", 
+                "就像在兩個喜歡的對象（或工作）之間猶豫不決，結果可能兩個都落空。這也暗示著關係中的溝通不良，或是做出了違背本心的選擇。"),
+            
+            createCard("maj_7", "戰車", null, 7, "action", 
+                "就像駕駛著一台跑車在高速公路上奔馳，雖然路況可能很顛簸，但你雙手緊握方向盤，靠著意志力硬是衝過去。這是勝利的前兆，堅持住！", 
+                "就像開車時情緒失控亂踩油門，結果迷路或發生擦撞。這暗示你可能被情緒沖昏頭，或是方向錯誤還硬要衝，建議先踩煞車冷靜一下。"),
+            
+            createCard("maj_8", "力量", null, 8, "wait", 
+                "就像美女與野獸的故事，不是用鞭子馴服獅子，而是用溫柔的撫摸讓牠安靜。真正的強大不是大聲吼叫，而是面對困難時依然保持優雅與耐心。", 
+                "就像遇到困難就想逃避，或是因為恐懼而變得具攻擊性。這暗示你對自己失去了信心，忘了其實你有能力處理這一切，別被心裡的野獸嚇到了。"),
+            
+            createCard("maj_9", "隱者", null, 9, "wait", 
+                "就像一個人關掉手機，躲進深山裡閉關修練。這段時間你不需要社交，你需要的是安靜地問自己「我要什麼？」。答案不在外面，在你心裡。", 
+                "就像因為害怕受傷而把自己關在房間裡不見人，變成了一種逃避。這提醒你，獨處是為了充電，而不是為了切斷與世界的連結，別鑽牛角尖了。"),
+            
+            createCard("maj_10", "命運之輪", null, 10, "new", 
+                "就像在賭場拉霸機拉到了777，或是突然接到一個意外的工作邀約。命運的輪盤轉動了，好的機會即將上門，你要做的就是順著這股流動前進。", 
+                "就像遇到水逆，諸事不順，覺得全世界都在跟你作對。這其實是命運在提醒你「暫停一下」，不要硬去抵抗改變，低潮過後就是高潮。"),
+            
+            createCard("maj_11", "正義", null, 11, "stable", 
+                "就像在法院上法官敲下槌子，種什麼因得什麼果。這是一張講求邏輯與契約的牌，如果你過去努力，現在會得到回報；如果你曾偷懶，現在得付出代價。", 
+                "就像被誤會卻有理說不清，或是遭遇到不公平的對待。這也可能暗示你自己因為帶有偏見，而做出了錯誤的判斷，小心不要偏心喔。"),
+            
+            createCard("maj_12", "倒吊人", null, 12, "wait", 
+                "就像把自己倒掛在樹上，雖然身體不能動，但看世界的角度完全不一樣了。現在事情卡住了沒關係，與其硬衝，不如先暫停，換個腦袋思考。", 
+                "就像你是為了別人好，但別人根本不領情，讓你覺得自己很委屈。這是一種無謂的犧牲，建議你趕快把自己放下來，別再當受氣包了。"),
+            
+            createCard("maj_13", "死神", null, 13, "caution", 
+                "就像手機摔得粉碎完全修不好，雖然難過，但這迫使你終於去買了那支想要很久的新手機。舊的不去新的不來，該放手的就讓它走吧。", 
+                "就像明明這段關係已經爛透了，你卻因為怕孤單而死抓著不放。抗拒改變只會延長痛苦，承認「它已經結束了」是你現在最需要的勇氣。"),
+            
+            createCard("maj_14", "節制", null, 14, "stable", 
+                "就像調酒師在混合兩種不同的飲料，試圖調出最完美的口感。你現在需要當那個「中間人」，在工作與生活、感性與理性之間找到平衡點。", 
+                "就像把兩種不相容的液體硬倒在一起，結果發生爆炸。這暗示你最近生活失衡了，可能過度投入某件事而忽略了其他，或者缺乏耐心導致溝通破局。"),
+            
+            createCard("maj_15", "高塔", null, 15, "caution", 
+                "就像蓋得好好的積木城堡突然被推倒，雖然嚇人，但也讓你看清原本的地基根本不穩。這是一個劇烈的改變，雖然痛，但能讓你徹底覺醒。", 
+                "就像發現房子有裂縫卻只用壁紙貼起來假裝沒事。雖然暫時沒倒，但心裡總是提心吊膽。這暗示你正在逃避一個即將爆發的問題。"),
+            
+            createCard("maj_16", "星星", null, 16, "new", 
+                "就像在漆黑的沙漠中看到了滿天星斗，雖然還沒天亮，但你知道方向在哪裡。這是一段療癒身心的時光，相信你的願望，宇宙正在幫你。", 
+                "就像原本期待很久的流星雨卻因為烏雲而沒看到。這暗示你對某件事期待過高而感到失落，或是對自己缺乏信心，覺得夢想遙不可及。"),
+            
+            createCard("maj_17", "月亮", null, 17, "caution", 
+                "就像在起大霧的半夜開車，看不清前面的路，路邊的影子看起來都像鬼。你現在感到不安、懷疑，甚至被恐懼綁架，但其實很多都是你自己嚇自己。", 
+                "就像早晨的陽光驅散了迷霧，你發現昨晚嚇你的「鬼」其實只是件衣服。隱藏的秘密或謊言被揭穿，雖然殘酷，但你終於不用再猜疑了。"),
+            
+            createCard("maj_18", "太陽", null, 18, "social", 
+                "就像夏天在海邊奔跑，陽光燦爛，心情好到想唱歌。這是塔羅牌裡最好的牌之一，象徵成功、活力與純粹的快樂，盡情享受當下吧！", 
+                "就像雖然是大晴天但你忘了帶太陽眼鏡，有點刺眼。這代表雖然整體運勢不錯，但可能有一些小烏雲（比如過度樂觀忽略細節），稍微注意一下就好。"),
+            
+            createCard("maj_19", "審判", null, 19, "new", 
+                "就像期末考放榜的那一刻，過去一學期有沒有努力，現在一翻兩瞪眼。這是人生的十字路口，聽到內心的召喚，做出那個早就該做的決定吧。", 
+                "就像明明知道該減肥了，卻還是假裝聽不到體重計的警告。這暗示你正在逃避一個重要的決定，或是對過去的錯誤感到後悔卻不願改變。"),
+            
+            createCard("maj_20", "世界", null, 20, "stable", 
+                "就像拼圖拼上了最後一塊，或者環遊世界一圈回到了家。這是一個循環的圓滿結束，你完成了目標，可以好好慶祝並準備進入下一個階段了。", 
+                "就像跑馬拉松在終點線前跌倒，或是拼圖少了一塊弄丟了。雖然離成功很近，但總覺得心裡有點空虛，或者因為某些小阻礙而無法完美收尾。")
         ];
 
-        // Suits Data
-        const SUITS = {
-            wands: { name: "權杖", element: "火", keywords: ["行動", "熱情", "靈感"], meaning: "與行動力、創造力及野心有關。" },
-            cups: { name: "聖杯", element: "水", keywords: ["情感", "關係", "直覺"], meaning: "與愛、情緒及人際關係有關。" },
-            swords: { name: "寶劍", element: "風", keywords: ["思想", "衝突", "溝通"], meaning: "與理智、思考及挑戰有關。" },
-            coins: { name: "星幣", element: "土", keywords: ["物質", "工作", "財富"], meaning: "與金錢、工作及現實層面有關。" }
+        // Generator for Minor Arcana (生活化版)
+        const getMinorMeaning = (suitKey, number) => {
+            const suits = {
+                wands: { name: "權杖", element: "火 (行動/熱情)", verb: "行動", area: "工作或興趣" },
+                cups: { name: "聖杯", element: "水 (情感/人際)", verb: "感受", area: "感情或人際" },
+                swords: { name: "寶劍", element: "風 (思考/傷害)", verb: "思考", area: "想法或溝通" },
+                coins: { name: "星幣", element: "土 (物質/金錢)", verb: "擁有", area: "金錢或現實" }
+            };
+
+            const s = suits[suitKey];
+
+            // Specific Scenario Generator based on Number + Suit
+            const uprightScenarios = {
+                1: { // Ace
+                    wands: "就像突然靈光一閃，想開一個新頻道或學新才藝，熱血沸騰！",
+                    cups: "就像剛認識一個新朋友或對象，心裡泛起一陣漣漪，感覺對了。",
+                    swords: "就像想出了一個絕妙的點子，或是做了一個果斷的新決定。",
+                    coins: "就像天上掉下來一個賺錢的好機會，或是拿到了一筆新資金。"
+                },
+                2: { // Balance/Choice
+                    wands: "就像拿著地圖在規劃下一步，雖然還沒出發，但眼光放得很遠。",
+                    cups: "就像和喜歡的人乾杯，彼此心意相通，關係和諧又甜蜜。",
+                    swords: "就像被蒙著眼睛要你選左右邊，因為不想面對現實而僵在那裡。",
+                    coins: "就像像雜耍藝人一樣同時玩兩顆球，努力在收支或兩份工作中保持平衡。"
+                },
+                3: { // Growth/Group
+                    wands: "就像你的計畫初步成功了，站在高處看著船入港，期待更多。",
+                    cups: "就像週五晚上跟閨蜜好友去聚餐喝酒，氣氛超嗨，大家都很開心。",
+                    swords: "就像心被狠狠刺了一下，可能是聽到壞消息或失戀，真的很痛。",
+                    coins: "就像跟專業人士一起合作，大家各司其職把專案蓋起來，講求專業。"
+                },
+                4: { // Stability
+                    wands: "就像搬進新家辦入厝派對，生活穩定了下來，感到安穩與快樂。",
+                    cups: "就像有人請你喝飲料你卻說不要，對現狀感到無聊，提不起勁。",
+                    swords: "就像生病了需要躺在床上休息，什麼都不想管，暫時休戰。",
+                    coins: "就像緊緊抱著存錢筒不肯放手，雖然有錢但有點守財奴，不敢花錢。"
+                },
+                5: { // Conflict/Loss
+                    wands: "就像一群人在大亂鬥，意見不合吵成一團，雖然激烈但比較像良性競爭。",
+                    cups: "就像打破了杯子看著碎片哭泣，只看到失去的，沒看到旁邊還有沒破的杯子。",
+                    swords: "就像跟人吵架吵贏了，但對方受傷離開了，贏了面子輸了裡子。",
+                    coins: "就像在大雪天走在教堂外，感覺自己很窮、很孤單，需要幫忙卻不敢開口。"
+                },
+                6: { // Harmony/Help
+                    wands: "就像騎著馬光榮返鄉，大家都為你鼓掌，享受勝利的時刻。",
+                    cups: "就像偶遇小時候的玩伴，或是翻看舊照片，充滿懷舊與單純的快樂。",
+                    swords: "就像搭船離開暴風圈，雖然還沒到岸，但至少心情慢慢平靜下來了。",
+                    coins: "就像你手頭寬裕捐錢給別人，或者是你剛好缺錢就有人雪中送炭。"
+                },
+                7: { // Challenge/Choices
+                    wands: "就像一個打十個，雖然挑戰很多，但你站在有利位置，堅持就能贏。",
+                    cups: "就像在逛網拍看到什麼都想買，幻象很多，但不知道哪個才是真的。",
+                    swords: "就像偷偷摸摸把別人的東西拿走，想用小聰明解決問題，或是有事隱瞞。",
+                    coins: "就像農夫看著還沒長大的作物嘆氣，在思考「這值得我繼續等嗎？」。"
+                },
+                8: { // Movement/Mastery
+                    wands: "就像好幾支箭同時射過來，事情發生得超快，訊息轟炸，節奏很趕。",
+                    cups: "就像毅然決然離開一個雖然穩定但不快樂的環境，去尋找心中的詩與遠方。",
+                    swords: "就像被繩子綁住動彈不得，其實繩子很鬆，是你自己把自己嚇得不敢動。",
+                    coins: "就像工匠專注地在雕刻作品，不眠不休，透過日積月累的努力換取技術。"
+                },
+                9: { // Fulfillment/Nightmare
+                    wands: "就像受傷的戰士包著繃帶還是堅持站在前線，雖然累但絕不放棄。",
+                    cups: "就像一個人坐在滿桌美食前，覺得「老子/老娘現在過得超爽」，自我滿足。",
+                    swords: "就像半夜被惡夢嚇醒，坐在床上抱頭痛哭，焦慮到不行。",
+                    coins: "就像穿著華麗的衣服在自家的花園散步，單身貴族，有錢又有閒。"
+                },
+                10: { // Completion
+                    wands: "就像一個人抱著十根木頭走路，累得要死還要硬撐，責任太重了啦。",
+                    cups: "就像童話故事的結局，一家人看著彩虹，幸福美滿，情感連結超強。",
+                    swords: "就像背上插滿了劍倒在地上，慘到不能再慘，但好消息是痛苦結束了。",
+                    coins: "就像繼承了家產或是家族企業賺大錢，物質生活富足穩定，還有傳承的意味。"
+                },
+                "侍者": { 
+                    wands: "像個充滿好奇的小探險家，剛拿到新玩具，迫不及待想試試看。",
+                    cups: "像個害羞的少年拿著情書，心裡有話想說，情感細膩又充滿想像。",
+                    swords: "像個愛打聽八卦的年輕人，反應很快，但也可能說話有點衝。",
+                    coins: "像個認真的實習生，雖然經驗不足，但很願意一步一步慢慢學。"
+                },
+                "騎士": { 
+                    wands: "像個衝動的熱血青年，說走就走，雖然有行動力但可能三分鐘熱度。",
+                    cups: "像個浪漫的白馬王子，帶著花來找你，追求的是浪漫與情感的流動。",
+                    swords: "像個飆車族，為了目標衝超快，思緒敏捷但可能忽略別人的感受。",
+                    coins: "像個騎著烏龜的騎士，慢吞吞但是超穩，答應你的事絕對會做到。"
+                },
+                "皇后": { 
+                    wands: "像個陽光大姊姊，充滿魅力與自信，在團體中大家都喜歡聽她的。",
+                    cups: "像個溫柔的媽媽或傾聽者，直覺很強，能感受到你沒說出口的情緒。",
+                    swords: "像個精明幹練的女主管，說話直接不拐彎抹角，重視邏輯與界線。",
+                    coins: "像個很會照顧人的家庭主婦或老闆娘，務實又溫暖，會把你餵得飽飽的。"
+                },
+                "國王": { 
+                    wands: "像個創業家或領袖，有遠見又有魅力，帶領大家往目標衝刺。",
+                    cups: "像個成熟的好爸爸，情緒穩定，雖然話不多但很關心家人。",
+                    swords: "像個權威的法官或教授，非常理性專業，但也可能讓人覺得有點冷冰冰。",
+                    coins: "像個大企業家，手握資源，看重的是實際的成果與長遠的利益。"
+                }
+            };
+
+            // 逆位描述 (加上簡單的轉折)
+            const reversedScenarios = {
+                1: { // Ace Rev
+                    wands: "就像火柴濕了點不著，想做什麼卻一直提不起勁，或是時機未到。",
+                    cups: "就像滿出來的水灑了一地，情感可能有點過度氾濫，或是感覺空虛。",
+                    swords: "就像筆記本被撕破，點子雖好但執行不出來，或是腦袋打結。",
+                    coins: "就像錢包破了個洞，錢剛進來又花出去，或是投資時機不對。"
+                },
+                "default": "這張牌逆位時，上述的能量會變得不穩定。可能表現過度（例如太衝動），或是表現不足（例如拖延、停滯）。"
+            };
+
+            const upText = uprightScenarios[number] ? uprightScenarios[number][suitKey] : "正位能量顯現。";
+            
+            // 處理逆位邏輯
+            let revText = "";
+            if (reversedScenarios[number] && reversedScenarios[number][suitKey]) {
+                revText = reversedScenarios[number][suitKey];
+            } else if (typeof number === 'string') { // 宮廷牌逆位通用
+                 if (number === "侍者") revText = "像個不受控的小屁孩，可能會傳達錯誤的消息，或是三分鐘熱度。";
+                 else if (number === "騎士") revText = "太過魯莽或是完全不動，行動力出現了問題。";
+                 else if (number === "皇后") revText = "情緒勒索，或是嫉妒心太強，讓人感到窒息。";
+                 else if (number === "國王") revText = "太過固執專制，聽不進別人的話，或是濫用權力。";
+            } else {
+                // 數字牌逆位通用補充
+                if (number === 5) revText = "雖然還在混亂中，但最壞的狀況已經過去了，開始學會接受。";
+                else if (number === 10) revText = "壓力大到爆表，或者是該結束的卻還在拖泥帶水。";
+                else revText = `原本${s.name}順利的能量受阻，可能計畫延遲，或是你心態上還沒準備好。`;
+            }
+
+            // Tag Logic for Minors
+            // Default tags mapping
+            let tag = 'action';
+            if(suitKey === 'cups') tag = 'social';
+            if(suitKey === 'swords') tag = 'conflict';
+            if(suitKey === 'coins') tag = 'money';
+            
+            // Override based on number
+            if(number === 1) tag = 'new';
+            if(number === 4) tag = 'stable'; // or wait
+            if(number === 5) tag = 'conflict';
+            if(number === 6) tag = 'social'; // or stable
+            if(number === 7) tag = 'caution'; // or conflict
+            if(number === 8 && suitKey === 'swords') tag = 'wait';
+            if(number === 8 && suitKey === 'wands') tag = 'action';
+            if(number === 9) tag = 'wait'; // or stable
+            if(number === 10) tag = 'stable'; // or caution
+            if(number === '侍者') tag = 'new';
+            
+            // Specific overrides
+            if(suitKey === 'swords' && (number === 3 || number === 9 || number === 10)) tag = 'conflict';
+            if(suitKey === 'coins' && number === 5) tag = 'caution';
+
+            return { up: upText, rev: revText, tag: tag };
         };
 
-        // Court Cards Data (Generic templates to save space, but customized in generation)
+        // Generate Minor Arcana Array
+        let MINORS = [];
+        const SUITS_KEYS = ["wands", "cups", "swords", "coins"];
         const COURTS = ["侍者", "騎士", "皇后", "國王"];
         const NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-        // Generate Minor Arcana
-        let MINORS = [];
-        Object.keys(SUITS).forEach(suitKey => {
-            const s = SUITS[suitKey];
-            
-            // Number Cards 1-10
+        SUITS_KEYS.forEach(suitKey => {
+            // Number Cards
             NUMBERS.forEach(num => {
-                let name = `${s.name}${num === 1 ? 'ACE' : num}`;
-                let id = `min_${suitKey}_${num}`;
-                let upK = [], revK = [], upS = "", revS = "";
-                
-                // Simplified Logic for content generation based on numerology + suit
-                // Note: In a real production app, you might hardcode all 56, but here we use a smart generator for the prompt demo.
-                // I will inject specific "flavour" text to meet the requirement.
-                
-                if (num === 1) {
-                    upK = [`新的${s.keywords[0]}`, "開端", "潛力"]; revK = ["延遲", "錯失機會", "缺乏動力"];
-                    upS = `一個新的${s.element}元素機會正在萌芽，${s.meaning} 現在是把握時機的起點。`;
-                    revS = `原本的新開始受到了阻礙，或是你尚未準備好迎接這個${s.keywords[0]}的機會。`;
-                } else if (num === 5) { // Conflict numbers
-                    upK = ["失落", "衝突", "挑戰"]; revK = ["接受", "解決", "釋懷"];
-                    upS = `面臨${s.element}層面的失落或衝突，可能感到${s.keywords[1]}上的不順遂。`;
-                    revS = `開始從混亂或損失中走出來，學會接受並尋找新的解決方案。`;
-                } else if (num === 10) { // Completion
-                    upK = ["圓滿", "過度", "結局"]; revK = ["負擔", "破碎", "未完"];
-                    upS = `到達了${s.element}能量的頂峰，象徵某個階段的完成或集大成。`;
-                    revS = `可能承受過多的壓力，或是原本圓滿的局面出現了裂痕。`;
-                } else {
-                    // Generic numerology filler for demo completeness
-                    upK = [`${s.keywords[0]}發展`, "過程", "累積"]; revK = ["不穩", "阻礙", "失衡"];
-                    upS = `在${s.element}領域中穩定發展，你的${s.keywords[2]}正在引導你前進。`;
-                    revS = `發展過程中遇到了一些不穩定因素，需要重新檢視你的${s.keywords[1]}狀態。`;
-                }
-
-                MINORS.push(createCard(id, name, suitKey, num, upK, revK, upS, revS));
+                const meaning = getMinorMeaning(suitKey, num);
+                const suitName = suitKey === 'wands' ? '權杖' : suitKey === 'cups' ? '聖杯' : suitKey === 'swords' ? '寶劍' : '星幣';
+                const finalName = `${suitName} ${num === 1 ? 'Ace' : num}`;
+                MINORS.push(createCard(`min_${suitKey}_${num}`, finalName, suitKey, num, meaning.tag, meaning.up, meaning.rev));
             });
 
             // Court Cards
-            COURTS.forEach((rank, idx) => {
-                let name = `${s.name}${rank}`;
-                let id = `min_${suitKey}_${rank}`;
-                let upK = [], revK = [], upS = "", revS = "";
-                
-                if (rank === "侍者") {
-                    upK = ["好奇", "訊息", "學習者"]; revK = ["幼稚", "壞消息", "分心"];
-                    upS = `一位年輕、充滿好奇心的${s.element}能量探索者，可能帶來新的消息或學習機會。`;
-                    revS = `可能表現得較為幼稚或不可靠，或是傳來了令人困擾的消息。`;
-                } else if (rank === "騎士") {
-                    upK = ["行動", "衝勁", "追求"]; revK = ["魯莽", "停滯", "衝動"];
-                    upS = `積極行動的${s.element}能量，為了目標勇往直前，充滿熱情與速度。`;
-                    revS = `過於衝動而欠缺考慮，或是原本的行動計畫被迫停滯。`;
-                } else if (rank === "皇后") {
-                    upK = ["關懷", "內在力量", "成熟"]; revK = ["依賴", "嫉妒", "情緒化"];
-                    upS = `以成熟、滋養的方式展現${s.element}特質，重視內在的感受與關係的維護。`;
-                    revS = `情緒起伏較大，可能因為不安全感而對他人產生依賴或控制。`;
-                } else if (rank === "國王") {
-                    upK = ["權威", "掌控", "領導"]; revK = ["專制", "冷漠", "無能"];
-                    upS = `成熟地掌控${s.element}領域，展現專業與領導力，能夠理性地處理事務。`;
-                    revS = `濫用權力或過於嚴苛，可能在${s.keywords[1]}方面表現得過於冷漠或固執。`;
-                }
-                
-                MINORS.push(createCard(id, name, suitKey, rank, upK, revK, upS, revS));
+            COURTS.forEach(rank => {
+                const meaning = getMinorMeaning(suitKey, rank);
+                const suitName = suitKey === 'wands' ? '權杖' : suitKey === 'cups' ? '聖杯' : suitKey === 'swords' ? '寶劍' : '星幣';
+                const finalName = `${suitName}${rank}`;
+                MINORS.push(createCard(`min_${suitKey}_${rank}`, finalName, suitKey, rank, meaning.tag, meaning.up, meaning.rev));
             });
         });
 
         const TAROT_DECK = [...MAJORS, ...MINORS];
+
+        // 3. Smart Advice Library
+        const ADVICE_LIBRARY = {
+            "love": {
+                "new": { up: "適合：主動約對方去一個新鮮的地方，或製造一點小驚喜。不適合：太過被動等待，或是一下子給對方太大的承諾。", rev: "適合：先緩一緩，確定自己準備好了再出發。不適合：因為寂寞而隨便開始一段關係。" },
+                "action": { up: "適合：大膽告白或直接表達你的感受，愛要說出來。不適合：猜來猜去，或是在心裡演小劇場。", rev: "適合：控制一下你的熱情，不要嚇到對方。不適合：因為衝動而說出傷人的話。" },
+                "wait": { up: "適合：靜靜陪伴，或給彼此一點獨處的空間。不適合：急著要答案，或是一直追問「我們現在是什麼關係」。", rev: "適合：走出去多認識人，不要封閉自己。不適合：一直活在過去的回憶裡走不出來。" },
+                "stable": { up: "適合：享受平淡的幸福，一起煮飯或窩在家看電影。不適合：沒事找事做，或是為了追求刺激而破壞現狀。", rev: "適合：找時間好好溝通，解決那些累積已久的小問題。不適合：忽視關係中的裂痕假裝沒事。" },
+                "conflict": { up: "適合：理性溝通，把話講開，不要冷戰。不適合：情緒化地爭吵，或是堅持自己一定是對的。", rev: "適合：先冷靜一個晚上，不要在氣頭上做決定。不適合：翻舊帳，或是用言語攻擊對方的痛處。" },
+                "social": { up: "適合：帶另一半去見朋友，或是參加雙人聚會。不適合：佔有慾太強，把對方綁在身邊。", rev: "適合：多關注你們兩個人的世界，減少外界干擾。不適合：因為朋友的閒言閒語而懷疑對方。" },
+                "money": { up: "適合：一起規劃未來的財務目標，或討論金錢觀。不適合：為了誰該付錢這種小事斤斤計較。", rev: "適合：在物質上互相體諒。不適合：用金錢來衡量對方的愛。" },
+                "caution": { up: "適合：多愛自己一點，設立健康的界線。不適合：過度付出到失去自我，或忽視警訊。", rev: "適合：誠實面對真相，即使那可能有點痛。不適合：自欺欺人，或是明知不適合還硬撐。" }
+            },
+            "career": {
+                "new": { up: "適合：啟動新計畫、學習新技能或投遞履歷。不適合：墨守成規，拒絕接觸新事物。", rev: "適合：重新評估計畫的可行性，把細節想清楚。不適合：還沒準備好就貿然辭職或創業。" },
+                "action": { up: "適合：積極爭取表現機會，加班衝刺一下會有好成果。不適合：拖延症發作，或是只說不做。", rev: "適合：放慢腳步，檢查有沒有遺漏的細節。不適合：因為心急而犯下粗心的錯誤。" },
+                "wait": { up: "適合：進修充電，或是先觀察局勢再行動。不適合：強出頭，或是在時機未到時硬要推動進度。", rev: "適合：打破僵局，嘗試用不同的方法解決問題。不適合：一直卡在原地抱怨環境。" },
+                "stable": { up: "適合：把手邊的工作做好，建立標準作業流程(SOP)。不適合：隨意更動已經運作良好的規則。", rev: "適合：檢視現有的制度是否有僵化的地方。不適合：固執己見，不聽同事的建議。" },
+                "conflict": { up: "適合：就事論事，用數據和邏輯來說服別人。不適合：把工作上的歧見帶入私人情緒。", rev: "適合：暫時避開鋒芒，不要正面衝突。不適合：在背後說人壞話或搞小團體。" },
+                "social": { up: "適合：拓展人脈，參加業界交流活動。不適合：單打獨鬥，忽略了團隊合作的重要。", rev: "適合：專注在自己的專業上，減少無效社交。不適合：因為人情壓力而接下不想做的工作。" },
+                "money": { up: "適合：爭取加薪，或是投資自己提升身價。不適合：太過計較眼前的蠅頭小利。", rev: "適合：保守理財，看緊預算。不適合：進行高風險的投資或借貸。" },
+                "caution": { up: "適合：仔細檢查合約，保持警覺。不適合：輕信口頭承諾，或是便宜行事。", rev: "適合：承認錯誤並設立停損點。不適合：為了面子而硬撐一個失敗的專案。" }
+            },
+            // Fallback for other topics (money, study, etc. can map to generic)
+            "default": {
+                "new": { up: "適合：嘗試以前沒做過的事，踏出舒適圈。不適合：想太多而不敢行動。(僅供參考)", rev: "適合：再多做一點功課，降低風險。不適合：盲目跟風。(僅供參考)" },
+                "action": { up: "適合：坐而言不如起而行，現在就是最好的時機。不適合：猶豫不決浪費時間。(僅供參考)", rev: "適合：三思而後行，欲速則不達。不適合：衝動行事。(僅供參考)" },
+                "wait": { up: "適合：休息是為了走更長遠的路，多聽多看。不適合：焦慮地逼自己要有產出。(僅供參考)", rev: "適合：動起來，不要讓自己生鏽了。不適合：一直找藉口拖延。(僅供參考)" },
+                "stable": { up: "適合：維持現狀，穩紮穩打。不適合：好高騖遠。(僅供參考)", rev: "適合：彈性調整，不要太死腦筋。不適合：不知變通。(僅供參考)" },
+                "conflict": { up: "適合：面對問題，解決核心矛盾。不適合：逃避現實。(僅供參考)", rev: "適合：退一步海闊天空。不適合：硬碰硬。(僅供參考)" },
+                "social": { up: "適合：尋求他人的幫助或合作。不適合：孤軍奮戰。(僅供參考)", rev: "適合：把重心放回自己身上。不適合：過度在意別人的眼光。(僅供參考)" },
+                "money": { up: "適合：理性規劃資源。不適合：衝動消費。(僅供參考)", rev: "適合：保守為上。不適合：貪小便宜。(僅供參考)" },
+                "caution": { up: "適合：謹慎行事，安全第一。不適合：冒險賭一把。(僅供參考)", rev: "適合：看清真相，接受現實。不適合：自我欺騙。(僅供參考)" }
+            }
+        };
 
         /**
          * 2. App Logic
          */
         
         const SPREADS = {
-            "single": { name: "單張指引", positions: ["指引"] },
-            "time": { name: "時間之流", positions: ["過去", "現在", "未來"] },
-            "soa": { name: "現況分析", positions: ["現況", "障礙", "建議"] }
+            "single": { name: "單張指引", positions: ["當下指引"] },
+            "time": { name: "時間之流", positions: ["過去的經驗", "現在的狀況", "未來的趨勢"] },
+            "soa": { name: "現況分析", positions: ["目前處境", "遇到的障礙", "建議的行動"] }
         };
 
         class TarotApp {
@@ -444,7 +642,7 @@
                 if (this.isReading) return;
                 const question = document.getElementById('questionInput').value.trim();
                 if (!question) {
-                    alert("請先輸入你想問的問題！");
+                    alert("請先輸入你想問的問題，心誠則靈！");
                     return;
                 }
 
@@ -508,6 +706,23 @@
                 });
             }
 
+            // 新增：智慧建議生成器
+            getSmartAdvice(tag, topic, isUpright) {
+                // Determine category based on topic
+                let category = 'default';
+                if (topic === 'love' || topic === 'relation') category = 'love';
+                if (topic === 'career' || topic === 'study' || topic === 'money') category = 'career';
+
+                // Get base advice object
+                const adviceObj = ADVICE_LIBRARY[category][tag] || ADVICE_LIBRARY['default'][tag];
+                
+                // Get string
+                let text = isUpright ? adviceObj.up : adviceObj.rev;
+                
+                // Add Disclaimer
+                return text + " (僅供參考)";
+            }
+
             generateInterpretations(drawnCards) {
                 const topic = document.getElementById('topicSelect').value;
                 const topicLabels = {
@@ -521,34 +736,15 @@
                     const card = item.card;
                     const orient = item.isUpright ? "正位" : "逆位";
                     const summary = item.isUpright ? card.uprightSummary : card.reversedSummary;
-                    const keywords = item.isUpright ? card.uprightKeywords : card.reversedKeywords;
                     
-                    // Procedural Interpretation Generation
+                    // Generate specific advice
+                    const advice = this.getSmartAdvice(card.tag, topic, item.isUpright);
+
+                    // Build HTML
                     let text = "";
-                    
-                    // 1. Contextual Intro
-                    if (item.position.includes("過去") || item.position.includes("現況")) {
-                        text += `在${item.position}的位置上，出現了「${card.name}${orient}」。這張牌顯示出你${item.isUpright ? '目前正處於' : '可能正面臨'}一種${keywords[0]}的狀態。`;
-                    } else if (item.position.includes("障礙")) {
-                        text += `對於你當前的困境，「${card.name}${orient}」指出主要的障礙可能來自於${keywords[0]}或是${keywords[1]}的心態。`;
-                    } else if (item.position.includes("建議") || item.position.includes("未來")) {
-                        text += `做為${item.position}的指引，「${card.name}${orient}」建議你要關注${keywords[0]}。`;
-                    } else {
-                        text += `這張「${card.name}${orient}」為你帶來了關於${keywords[0]}的訊息。`;
-                    }
-
-                    // 2. Connecting to Summary
-                    text += ` ${summary}`;
-
-                    // 3. Contextual Advice based on Topic
-                    text += `<br><br><strong>💡 針對${topicLabels[topic]}的建議：</strong> `;
-                    if (topic === 'love') {
-                        text += item.isUpright ? "在感情中保持真誠與開放，這將帶來好的流動。" : "注意感情中的溝通誤區，不要讓恐懼阻礙了愛。";
-                    } else if (topic === 'career') {
-                        text += item.isUpright ? "工作上大膽發揮你的能力，現在是推進計畫的好時機。" : "工作可能面臨瓶頸，建議重新檢視細節或調整方向。";
-                    } else {
-                        text += "相信你的直覺，並依照牌面的指引調整心態，答案其實就在你心中。";
-                    }
+                    text += `<strong>【${item.position}】抽到了「${card.name} (${orient})」：</strong><br>`;
+                    text += `${summary}`;
+                    text += `<br><br><strong>💡 生活化建議：</strong><br>${advice}`;
 
                     html += `
                         <div class="reading-item" style="animation-delay: ${2 + index * 0.5}s">
@@ -556,12 +752,6 @@
                                 ${index+1}. ${item.position} — ${card.name} (${orient})
                             </div>
                             <div class="reading-text">${text}</div>
-                            <div class="keyword-toggle" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'block' ? 'none' : 'block'">
-                                顯示/隱藏 關鍵字
-                            </div>
-                            <div class="keywords-box">
-                                關鍵字：${keywords.join("、")}
-                            </div>
                         </div>
                     `;
                 });
@@ -570,7 +760,6 @@
                 setTimeout(() => {
                     this.resultsEl.innerHTML = html;
                     this.resultsEl.style.display = 'block';
-                    // Scroll to results
                     this.resultsEl.scrollIntoView({ behavior: 'smooth' });
                     this.isReading = false;
                     this.drawBtn.disabled = false;
